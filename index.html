@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ديلفري برو</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, update, serverTimestamp, remove, get }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ════════════════════════════════════════════
+// 🔥 FIREBASE CONFIG — استبدل بمشروعك
+// ════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let app, db;
+try {
+  app = initializeApp(firebaseConfig);
+  db  = getDatabase(app);
+  window._db  = db;
+  window._ref = ref;
+  window._push = push;
+  window._set  = set;
+  window._onValue = onValue;
+  window._update  = update;
+  window._serverTimestamp = serverTimestamp;
+  window._remove = remove;
+  window._get = get;
+  window._firebaseReady = true;
+  console.log("✅ Firebase connected");
+} catch(e) {
+  window._firebaseReady = false;
+  console.warn("⚠️ Firebase not configured — demo mode");
+}
+</script>
+
+<style>
+:root {
+  --bg:      #080810;
+  --surface: #111120;
+  --card:    #16162a;
+  --card2:   #1e1e35;
+  --border:  rgba(255,255,255,0.07);
+  --text:    #f0f0ff;
+  --muted:   rgba(240,240,255,0.4);
+  --accent:  #4f8eff;
+  --green:   #22d87a;
+  --orange:  #ff8c42;
+  --red:     #ff4560;
+  --yellow:  #ffd166;
+  --purple:  #a855f7;
+  --radius:  18px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text);overflow:hidden}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* ── SCROLLABLE BODY ── */
+.scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 90px}
+.scroll-body::-webkit-scrollbar{display:none}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+.fu{animation:fadeUp .4s cubic-bezier(.22,.68,0,1.2) both}
+.fu1{animation-delay:.06s}.fu2{animation-delay:.12s}.fu3{animation-delay:.18s}.fu4{animation-delay:.24s}
+
+/* ── LOGIN ── */
+#screen-login{background:var(--bg);align-items:center;justify-content:center;padding:28px}
+.login-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:28px;padding:32px 24px}
+.role-btn{width:100%;padding:16px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--text);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:all .2s}
+.role-btn:active,.role-btn.selected{border-color:var(--accent);background:rgba(79,142,255,.08);color:var(--accent)}
+.input-field{width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:14px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;outline:none;margin-bottom:12px;direction:rtl;transition:border .2s}
+.input-field:focus{border-color:var(--accent)}
+.btn-main{width:100%;padding:16px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(79,142,255,.3);transition:all .2s}
+.btn-main:active{transform:scale(.97);box-shadow:0 4px 12px rgba(79,142,255,.2)}
+
+/* ── TOP BAR ── */
+.topbar{padding:44px 16px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg)}
+.topbar h2{font-size:20px;font-weight:900}
+.avatar{width:38px;height:38px;border-radius:13px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(8,8,16,.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding:8px 0 18px}
+.bnav-btn{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:10px;font-weight:700;font-family:inherit;transition:color .2s;padding:4px 0}
+.bnav-btn.on{color:var(--accent)}
+.bnav-btn svg{width:22px;height:22px}
+.bnav-dot{width:5px;height:5px;border-radius:50%;background:var(--red);position:absolute;top:-2px;right:-2px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin-bottom:12px}
+.card-sm{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:12px}
+
+/* ── STATUS BADGE ── */
+.badge{border-radius:10px;padding:3px 10px;font-size:11px;font-weight:800;display:inline-block}
+.badge-new{background:rgba(79,142,255,.15);color:var(--accent)}
+.badge-accepted{background:rgba(255,140,66,.15);color:var(--orange)}
+.badge-picked{background:rgba(168,85,247,.15);color:var(--purple)}
+.badge-delivered{background:rgba(34,216,122,.15);color:var(--green)}
+.badge-cancelled{background:rgba(255,69,96,.15);color:var(--red)}
+
+/* ── ACTION BTNS ── */
+.btn-green{background:rgba(34,216,122,.12);border:1px solid rgba(34,216,122,.25);color:var(--green);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s}
+.btn-green:active{background:rgba(34,216,122,.22)}
+.btn-red{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.22);color:var(--red);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s}
+.btn-red:active{background:rgba(255,69,96,.2)}
+.btn-orange{background:rgba(255,140,66,.12);border:1px solid rgba(255,140,66,.25);color:var(--orange);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer}
+
+/* ── FORM ── */
+.label{color:var(--muted);font-size:12px;font-weight:700;margin-bottom:5px;display:block}
+.form-row{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select.input-field{appearance:none}
+
+/* ── STAT BOX ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;text-align:center}
+.stat-num{font-size:26px;font-weight:900;margin-bottom:2px}
+.stat-lbl{color:var(--muted);font-size:11px;font-weight:700}
+
+/* ── LIVE DOT ── */
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;position:relative}
+.live-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--green);animation:ping 1.2s ease-out infinite}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:55px;left:50%;transform:translateX(-50%) translateY(-6px);background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:10px 20px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;box-shadow:0 8px 24px #0008;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .icon{font-size:52px;margin-bottom:12px}
+
+/* ── ORDER DETAIL MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end}
+#modal-overlay.open{display:flex}
+#modal-box{width:100%;background:var(--surface);border-radius:28px 28px 0 0;padding:24px;max-height:88vh;overflow-y:auto;animation:slideIn .3s ease}
+#modal-box::-webkit-scrollbar{display:none}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px}
+
+/* ── DRIVER PING ── */
+@keyframes driverPing{0%{box-shadow:0 0 0 0 rgba(34,216,122,.5)}70%{box-shadow:0 0 0 14px rgba(34,216,122,0)}100%{box-shadow:0 0 0 0 rgba(34,216,122,0)}}
+.new-order-alert{animation:driverPing 1.5s infinite}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: LOGIN
+══════════════════════════════════════════ -->
+<div class="screen active" id="screen-login">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(79,142,255,.07),transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(168,85,247,.06),transparent 60%)"></div>
+  <div class="login-card fu" style="position:relative;z-index:1;margin:auto">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:48px;margin-bottom:8px">🚀</div>
+      <h1 style="font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent">ديلفري برو</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:4px">نظام إدارة التوصيل</p>
+    </div>
+
+    <!-- Role Select -->
+    <p style="color:var(--muted);font-size:12px;font-weight:700;margin-bottom:10px">اختر دورك</p>
+    <button class="role-btn" id="role-admin" onclick="selectRole('admin')">
+      <span style="font-size:24px">👑</span>
+      <div style="text-align:right">
+        <p style="font-weight:800">المدير</p>
+        <p style="font-size:12px;color:var(--muted);font-weight:400">تحكم كامل بالنظام</p>
+      </div>
+    </button>
+    <button class="role-btn" id="role-merchant" onclick="selectRole('merchant')">
+      <span style="font-size:24px">🏪</span>
+      <div style="text-align:right">
+        <p style="font-weight:800">التاجر / المطعم</p>
+        <p style="font-size:12px;color:var(--muted);font-weight:400">رفع الطلبيات وتتبعها</p>
+      </div>
+    </button>
+    <button class="role-btn" id="role-driver" onclick="selectRole('driver')">
+      <span style="font-size:24px">🛵</span>
+      <div style="text-align:right">
+        <p style="font-weight:800">السائق</p>
+        <p style="font-size:12px;color:var(--muted);font-weight:400">استلام الطلبيات وتوصيلها</p>
+      </div>
+    </button>
+
+    <!-- Code field -->
+    <div id="code-field" style="display:none;margin-top:4px">
+      <input class="input-field" id="login-code" type="password" placeholder="أدخل رمز الدخول..." maxlength="20">
+    </div>
+    <input class="input-field" id="login-name" placeholder="اسمك..." style="display:none;margin-top:0">
+
+    <button class="btn-main" onclick="doLogin()">دخول ←</button>
+    <p style="color:var(--muted);font-size:11px;text-align:center;margin-top:12px">للتجربة: رمز المدير <strong style="color:var(--accent)">admin123</strong> · التاجر <strong style="color:var(--orange)">merchant1</strong> · السائق <strong style="color:var(--green)">driver1</strong></p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: MERCHANT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-merchant">
+  <div class="topbar">
+    <div>
+      <p style="color:var(--muted);font-size:11px">مرحباً 👋</p>
+      <h2 id="merchant-name-top"></h2>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;align-items:center;gap:5px;background:rgba(34,216,122,.1);border:1px solid rgba(34,216,122,.2);border-radius:10px;padding:5px 10px">
+        <span class="live-dot"></span>
+        <span style="color:var(--green);font-size:11px;font-weight:700">مباشر</span>
+      </div>
+      <div class="avatar" onclick="logout()">🚪</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 14px">
+    <button class="tab-btn on" id="m-tab-new" onclick="mTab('new')">رفع طلبية</button>
+    <button class="tab-btn" id="m-tab-active" onclick="mTab('active')">
+      طلباتي <span id="m-active-badge" style="background:var(--accent);color:#fff;border-radius:6px;padding:1px 6px;font-size:10px;margin-right:4px;display:none"></span>
+    </button>
+    <button class="tab-btn" id="m-tab-done" onclick="mTab('done')">المنجزة</button>
+  </div>
+
+  <!-- NEW ORDER FORM -->
+  <div class="scroll-body" id="m-panel-new">
+    <div style="height:16px"></div>
+    <div class="card fu">
+      <p style="font-weight:800;font-size:16px;margin-bottom:16px">📦 طلبية جديدة</p>
+
+      <div class="form-row">
+        <label class="label">اسم الزبون (المستلم)</label>
+        <input class="input-field" id="f-customer" placeholder="مثال: أحمد محمد" style="margin:0">
+      </div>
+      <div class="form-row">
+        <label class="label">📞 رقم هاتف الزبون</label>
+        <input class="input-field" id="f-phone" type="tel" placeholder="05XXXXXXXX" style="margin:0">
+      </div>
+      <div class="form-row">
+        <label class="label">📍 عنوان التوصيل (تفصيلي)</label>
+        <textarea class="input-field" id="f-address" rows="2" placeholder="الحي، الشارع، رقم البناية..." style="margin:0;resize:none"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="label">📝 وصف الطلبية</label>
+        <input class="input-field" id="f-desc" placeholder="مثال: برجر دبل + بطاطس" style="margin:0">
+      </div>
+      <div class="row2">
+        <div class="form-row">
+          <label class="label">💰 سعر الطلبية (ريال)</label>
+          <input class="input-field" id="f-price" type="number" placeholder="0" style="margin:0" min="0">
+        </div>
+        <div class="form-row">
+          <label class="label">🛵 سعر التوصيل (ريال)</label>
+          <input class="input-field" id="f-delivery" type="number" placeholder="0" style="margin:0" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="label">🗒️ ملاحظات إضافية (اختياري)</label>
+        <input class="input-field" id="f-notes" placeholder="أي تعليمات للسائق..." style="margin:0">
+      </div>
+
+      <!-- Summary -->
+      <div id="order-summary" style="display:none;background:var(--card2);border-radius:14px;padding:14px;margin-bottom:16px">
+        <p style="font-weight:800;font-size:13px;margin-bottom:8px;color:var(--muted)">ملخص الطلبية</p>
+        <div id="summary-content"></div>
+      </div>
+
+      <button class="btn-main" onclick="previewOrder()">معاينة وإرسال 🚀</button>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stat-grid fu fu1">
+      <div class="stat-box">
+        <div class="stat-num" id="m-stat-today" style="color:var(--accent)">0</div>
+        <div class="stat-lbl">طلبيات اليوم</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="m-stat-done" style="color:var(--green)">0</div>
+        <div class="stat-lbl">منجزة</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="m-stat-pending" style="color:var(--orange)">0</div>
+        <div class="stat-lbl">قيد التوصيل</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="m-stat-revenue" style="color:var(--yellow)">0</div>
+        <div class="stat-lbl">إجمالي ريال</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE ORDERS -->
+  <div class="scroll-body" id="m-panel-active" style="display:none">
+    <div style="height:16px"></div>
+    <div id="m-active-list"></div>
+  </div>
+
+  <!-- DONE ORDERS -->
+  <div class="scroll-body" id="m-panel-done" style="display:none">
+    <div style="height:16px"></div>
+    <div id="m-done-list"></div>
+  </div>
+
+  <nav class="bnav">
+    <button class="bnav-btn on" id="mn-new" onclick="mTab('new')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      جديدة
+    </button>
+    <button class="bnav-btn" id="mn-active" onclick="mTab('active')" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      نشطة
+    </button>
+    <button class="bnav-btn" id="mn-done" onclick="mTab('done')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      منجزة
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: DRIVER
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-driver">
+  <div class="topbar">
+    <div>
+      <p style="color:var(--muted);font-size:11px">وضع السائق 🛵</p>
+      <h2 id="driver-name-top"></h2>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="driver-status-btn" onclick="toggleDriverStatus()" style="background:rgba(34,216,122,.1);border:1px solid rgba(34,216,122,.2);border-radius:10px;padding:6px 12px;color:var(--green);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">🟢 متاح</button>
+      <div class="avatar" onclick="logout()">🚪</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 14px">
+    <button class="tab-btn on" id="d-tab-available" onclick="dTab('available')">
+      متاحة <span id="d-new-count" style="background:var(--red);color:#fff;border-radius:6px;padding:1px 6px;font-size:10px;margin-right:4px;display:none"></span>
+    </button>
+    <button class="tab-btn" id="d-tab-mine" onclick="dTab('mine')">طلباتي</button>
+    <button class="tab-btn" id="d-tab-history" onclick="dTab('history')">السجل</button>
+  </div>
+
+  <!-- AVAILABLE -->
+  <div class="scroll-body" id="d-panel-available">
+    <div style="height:16px"></div>
+    <div id="d-available-list"></div>
+  </div>
+
+  <!-- MY ORDERS -->
+  <div class="scroll-body" id="d-panel-mine" style="display:none">
+    <div style="height:16px"></div>
+    <div id="d-mine-list"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="scroll-body" id="d-panel-history" style="display:none">
+    <div style="height:16px"></div>
+    <div class="stat-grid fu">
+      <div class="stat-box">
+        <div class="stat-num" id="d-stat-today" style="color:var(--accent)">0</div>
+        <div class="stat-lbl">اليوم</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="d-stat-earn" style="color:var(--yellow)">0</div>
+        <div class="stat-lbl">ريال أرباح</div>
+      </div>
+    </div>
+    <div id="d-history-list"></div>
+  </div>
+
+  <nav class="bnav">
+    <button class="bnav-btn on" id="dn-available" onclick="dTab('available')" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+      متاحة
+    </button>
+    <button class="bnav-btn" id="dn-mine" onclick="dTab('mine')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      طلباتي
+    </button>
+    <button class="bnav-btn" id="dn-history" onclick="dTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      السجل
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: ADMIN
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-admin">
+  <div class="topbar">
+    <div>
+      <p style="color:var(--muted);font-size:11px">لوحة التحكم 👑</p>
+      <h2>المدير</h2>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="display:flex;align-items:center;gap:5px;background:rgba(34,216,122,.1);border:1px solid rgba(34,216,122,.2);border-radius:10px;padding:5px 10px">
+        <span class="live-dot"></span>
+        <span style="color:var(--green);font-size:10px;font-weight:700">لايف</span>
+      </div>
+      <div class="avatar" onclick="logout()">🚪</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 14px;overflow-x:auto">
+    <button class="tab-btn on" id="a-tab-all" onclick="aTab('all')">كل الطلبات</button>
+    <button class="tab-btn" id="a-tab-live" onclick="aTab('live')">نشطة</button>
+    <button class="tab-btn" id="a-tab-drivers" onclick="aTab('drivers')">السائقون</button>
+    <button class="tab-btn" id="a-tab-stats" onclick="aTab('stats')">إحصائيات</button>
+  </div>
+
+  <!-- ALL ORDERS -->
+  <div class="scroll-body" id="a-panel-all">
+    <div style="height:12px"></div>
+    <!-- Filter -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px">
+      <button class="filter-chip active-filter" onclick="aFilter(this,'all')">الكل</button>
+      <button class="filter-chip" onclick="aFilter(this,'new')">جديد</button>
+      <button class="filter-chip" onclick="aFilter(this,'accepted')">مقبول</button>
+      <button class="filter-chip" onclick="aFilter(this,'picked')">في الطريق</button>
+      <button class="filter-chip" onclick="aFilter(this,'delivered')">منجز</button>
+      <button class="filter-chip" onclick="aFilter(this,'cancelled')">ملغي</button>
+    </div>
+    <div id="a-all-list"></div>
+  </div>
+
+  <!-- LIVE -->
+  <div class="scroll-body" id="a-panel-live" style="display:none">
+    <div style="height:12px"></div>
+    <div id="a-live-list"></div>
+  </div>
+
+  <!-- DRIVERS -->
+  <div class="scroll-body" id="a-panel-drivers" style="display:none">
+    <div style="height:12px"></div>
+    <div id="a-drivers-list"></div>
+    <div style="height:16px"></div>
+    <p style="color:var(--muted);font-size:12px;text-align:center;margin-bottom:8px">إضافة سائق</p>
+    <div class="card">
+      <input class="input-field" id="new-driver-name" placeholder="اسم السائق" style="margin-bottom:10px">
+      <input class="input-field" id="new-driver-code" placeholder="رمز الدخول" type="password" style="margin-bottom:10px">
+      <button class="btn-main" onclick="addDriver()">إضافة سائق +</button>
+    </div>
+    <p style="color:var(--muted);font-size:12px;text-align:center;margin:16px 0 8px">إضافة تاجر</p>
+    <div class="card">
+      <input class="input-field" id="new-merchant-name" placeholder="اسم التاجر / المطعم" style="margin-bottom:10px">
+      <input class="input-field" id="new-merchant-code" placeholder="رمز الدخول" type="password" style="margin-bottom:10px">
+      <button class="btn-main" style="background:linear-gradient(135deg,var(--orange),var(--yellow))" onclick="addMerchant()">إضافة تاجر +</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="scroll-body" id="a-panel-stats" style="display:none">
+    <div style="height:12px"></div>
+    <div class="stat-grid fu">
+      <div class="stat-box"><div class="stat-num" id="a-stat-total" style="color:var(--accent)">0</div><div class="stat-lbl">إجمالي الطلبات</div></div>
+      <div class="stat-box"><div class="stat-num" id="a-stat-done" style="color:var(--green)">0</div><div class="stat-lbl">منجزة</div></div>
+      <div class="stat-box"><div class="stat-num" id="a-stat-revenue" style="color:var(--yellow)">0</div><div class="stat-lbl">إيرادات ريال</div></div>
+      <div class="stat-box"><div class="stat-num" id="a-stat-drivers" style="color:var(--purple)">0</div><div class="stat-lbl">سائقون نشطون</div></div>
+    </div>
+    <div id="a-stats-breakdown"></div>
+  </div>
+
+  <nav class="bnav">
+    <button class="bnav-btn on" id="an-all" onclick="aTab('all')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      الطلبات
+    </button>
+    <button class="bnav-btn" id="an-live" onclick="aTab('live')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      نشطة
+    </button>
+    <button class="bnav-btn" id="an-drivers" onclick="aTab('drivers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      الفريق
+    </button>
+    <button class="bnav-btn" id="an-stats" onclick="aTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      إحصائيات
+    </button>
+  </nav>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<style>
+.tab-btn{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:11px 6px;color:var(--muted);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab-btn.on{color:var(--accent);border-bottom-color:var(--accent)}
+.filter-chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .2s;flex-shrink:0}
+.filter-chip.active-filter{background:rgba(79,142,255,.12);border-color:rgba(79,142,255,.3);color:var(--accent)}
+</style>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentUser = null; // {role, name, id}
+let allOrders   = {};
+let allDrivers  = {};
+let allMerchants = {};
+let driverAvailable = true;
+let adminFilter = 'all';
+let previewData = null;
+
+// Demo credentials (replaced by Firebase users in production)
+const DEMO_USERS = {
+  admin:    [{ code:'admin123',  name:'المدير العام',    role:'admin' }],
+  merchant: [
+    { code:'merchant1', name:'برجر هاوس',  role:'merchant', id:'m1' },
+    { code:'merchant2', name:'بيتزا نابولي', role:'merchant', id:'m2' },
+  ],
+  driver:   [
+    { code:'driver1', name:'محمد السائق', role:'driver', id:'d1' },
+    { code:'driver2', name:'علي التوصيل', role:'driver', id:'d2' },
+  ],
+};
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+let selectedRole = null;
+
+function selectRole(r) {
+  selectedRole = r;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('role-' + r).classList.add('selected');
+  document.getElementById('code-field').style.display = 'block';
+  document.getElementById('login-code').focus();
+  if (r === 'driver' || r === 'merchant') {
+    document.getElementById('login-name').style.display = 'none';
+  }
+}
+
+function doLogin() {
+  if (!selectedRole) { toast('اختر دورك أولاً ⬆️'); return; }
+  const code = document.getElementById('login-code').value.trim();
+  if (!code) { toast('أدخل رمز الدخول'); return; }
+
+  // Check demo users
+  const users = DEMO_USERS[selectedRole] || [];
+  const found = users.find(u => u.code === code);
+  if (found) {
+    currentUser = { ...found };
+    enterApp();
+    return;
+  }
+
+  // Check Firebase users
+  if (window._firebaseReady) {
+    const dbRef = window._ref(window._db, `users/${selectedRole}`);
+    window._onValue(dbRef, snap => {
+      const usersData = snap.val() || {};
+      const entry = Object.entries(usersData).find(([k,v]) => v.code === code);
+      if (entry) {
+        currentUser = { role: selectedRole, name: entry[1].name, id: entry[0] };
+        enterApp();
+      } else {
+        toast('❌ رمز دخول خاطئ');
+      }
+    }, { onlyOnce: true });
+  } else {
+    toast('❌ رمز دخول خاطئ');
+  }
+}
+
+function enterApp() {
+  showScreen('screen-' + currentUser.role);
+  if (currentUser.role === 'merchant') {
+    document.getElementById('merchant-name-top').textContent = currentUser.name;
+    initMerchant();
+  } else if (currentUser.role === 'driver') {
+    document.getElementById('driver-name-top').textContent = currentUser.name;
+    initDriver();
+  } else {
+    initAdmin();
+  }
+  toast('أهلاً ' + currentUser.name + ' 👋');
+}
+
+function logout() {
+  currentUser = null;
+  allOrders = {};
+  showScreen('screen-login');
+  document.getElementById('login-code').value = '';
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('code-field').style.display = 'none';
+  selectedRole = null;
+}
+
+// ═══════════════════════════════════════════
+// FIREBASE / DEMO DATA SYNC
+// ═══════════════════════════════════════════
+function listenOrders(callback) {
+  if (window._firebaseReady) {
+    const ordersRef = window._ref(window._db, 'orders');
+    window._onValue(ordersRef, snap => {
+      allOrders = snap.val() || {};
+      callback(allOrders);
+    });
+  } else {
+    // Demo mode
+    callback(allOrders);
+    setInterval(() => callback(allOrders), 2000);
+  }
+}
+
+function pushOrder(data) {
+  if (window._firebaseReady) {
+    const ref = window._push(window._ref(window._db, 'orders'));
+    window._set(ref, { ...data, id: ref.key });
+    return ref.key;
+  } else {
+    const id = 'ORD-' + Date.now().toString(36).toUpperCase();
+    allOrders[id] = { ...data, id };
+    return id;
+  }
+}
+
+function updateOrder(id, updates) {
+  if (window._firebaseReady) {
+    window._update(window._ref(window._db, 'orders/' + id), updates);
+  } else {
+    if (allOrders[id]) Object.assign(allOrders[id], updates);
+    refreshAll();
+  }
+}
+
+function refreshAll() {
+  if (currentUser?.role === 'merchant') renderMerchantOrders();
+  if (currentUser?.role === 'driver')   renderDriverOrders();
+  if (currentUser?.role === 'admin')    renderAdminOrders();
+}
+
+// ═══════════════════════════════════════════
+// MERCHANT
+// ═══════════════════════════════════════════
+function initMerchant() {
+  mTab('new');
+  listenOrders(orders => {
+    renderMerchantOrders();
+    updateMerchantStats();
+    // Badge
+    const active = myOrders().filter(o => ['new','accepted','picked'].includes(o.status));
+    const badge = document.getElementById('m-active-badge');
+    if (active.length) { badge.textContent = active.length; badge.style.display = 'inline'; }
+    else badge.style.display = 'none';
+  });
+  ['f-price','f-delivery'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateSummaryLive)
+  );
+}
+
+function myOrders() {
+  return Object.values(allOrders).filter(o => o.merchantId === currentUser.id);
+}
+
+function updateSummaryLive() {
+  const p = +document.getElementById('f-price').value || 0;
+  const d = +document.getElementById('f-delivery').value || 0;
+  if (p || d) {
+    document.getElementById('order-summary').style.display = 'block';
+    document.getElementById('summary-content').innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span style="color:var(--muted)">سعر الطلبية</span><span>${p} ريال</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+        <span style="color:var(--muted)">سعر التوصيل</span><span>${d} ريال</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:1px solid var(--border);padding-top:8px">
+        <span>الإجمالي</span><span style="color:var(--yellow)">${p+d} ريال</span>
+      </div>
+    `;
+  } else {
+    document.getElementById('order-summary').style.display = 'none';
+  }
+}
+
+function previewOrder() {
+  const customer = document.getElementById('f-customer').value.trim();
+  const phone    = document.getElementById('f-phone').value.trim();
+  const address  = document.getElementById('f-address').value.trim();
+  const desc     = document.getElementById('f-desc').value.trim();
+  const price    = +document.getElementById('f-price').value;
+  const delivery = +document.getElementById('f-delivery').value;
+  const notes    = document.getElementById('f-notes').value.trim();
+
+  if (!customer || !address || !desc || !price) {
+    toast('⚠️ يرجى تعبئة الحقول المطلوبة');
+    return;
+  }
+
+  previewData = { customer, phone, address, desc, price, delivery, notes,
+    merchantId: currentUser.id, merchantName: currentUser.name,
+    status: 'new', createdAt: Date.now(), driverId: null, driverName: null };
+
+  document.getElementById('modal-content').innerHTML = `
+    <h3 style="font-size:18px;font-weight:900;margin-bottom:16px">📋 تأكيد الطلبية</h3>
+    <div class="card-sm" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:12px">الزبون</span><span style="font-weight:700">${customer}</span></div>
+      ${phone ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:12px">الهاتف</span><span style="font-weight:700">${phone}</span></div>` : ''}
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:12px">العنوان</span><span style="font-weight:700;font-size:12px;text-align:left;max-width:55%">${address}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:12px">الطلبية</span><span style="font-weight:700">${desc}</span></div>
+      ${notes ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:12px">ملاحظات</span><span style="font-size:12px">${notes}</span></div>` : ''}
+    </div>
+    <div class="card-sm" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:13px">سعر الطلبية</span><span>${price} ريال</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--muted);font-size:13px">سعر التوصيل</span><span>${delivery} ريال</span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px"><span style="font-weight:900">الإجمالي</span><span style="color:var(--yellow);font-weight:900;font-size:18px">${price+delivery} ريال</span></div>
+    </div>
+    <button class="btn-main" onclick="submitOrder()">إرسال للسائقين 🚀</button>
+    <button onclick="closeModal()" style="width:100%;margin-top:10px;background:none;border:none;color:var(--muted);font-size:14px;font-family:inherit;cursor:pointer;padding:10px">إلغاء</button>
+  `;
+  openModal();
+}
+
+function submitOrder() {
+  if (!previewData) return;
+  pushOrder(previewData);
+  closeModal();
+  // Clear form
+  ['f-customer','f-phone','f-address','f-desc','f-price','f-delivery','f-notes'].forEach(id =>
+    document.getElementById(id).value = '');
+  document.getElementById('order-summary').style.display = 'none';
+  toast('✅ تم إرسال الطلبية للسائقين!');
+  mTab('active');
+}
+
+function renderMerchantOrders() {
+  const orders = myOrders().sort((a,b) => b.createdAt - a.createdAt);
+  const active = orders.filter(o => ['new','accepted','picked'].includes(o.status));
+  const done   = orders.filter(o => ['delivered','cancelled'].includes(o.status));
+
+  document.getElementById('m-active-list').innerHTML = active.length
+    ? active.map(o => orderCard(o, 'merchant')).join('')
+    : emptyState('لا توجد طلبيات نشطة', '📭');
+
+  document.getElementById('m-done-list').innerHTML = done.length
+    ? done.map(o => orderCard(o, 'merchant')).join('')
+    : emptyState('لا توجد طلبيات منجزة بعد', '📋');
+}
+
+function updateMerchantStats() {
+  const today = todayOrders(myOrders());
+  document.getElementById('m-stat-today').textContent   = today.length;
+  document.getElementById('m-stat-done').textContent    = today.filter(o=>o.status==='delivered').length;
+  document.getElementById('m-stat-pending').textContent = today.filter(o=>['new','accepted','picked'].includes(o.status)).length;
+  document.getElementById('m-stat-revenue').textContent = today.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.price+o.delivery),0);
+}
+
+function mTab(t) {
+  ['new','active','done'].forEach(x => {
+    document.getElementById('m-tab-'+x).classList.toggle('on', x===t);
+    document.getElementById('m-panel-'+x).style.display = x===t ? 'block' : 'none';
+    document.getElementById('mn-'+x).classList.toggle('on', x===t);
+  });
+}
+
+// ═══════════════════════════════════════════
+// DRIVER
+// ═══════════════════════════════════════════
+function initDriver() {
+  dTab('available');
+  listenOrders(orders => {
+    renderDriverOrders();
+    const newCount = Object.values(allOrders).filter(o => o.status === 'new').length;
+    const badge = document.getElementById('d-new-count');
+    if (newCount) { badge.textContent = newCount; badge.style.display='inline'; }
+    else badge.style.display='none';
+  });
+}
+
+function renderDriverOrders() {
+  const available = Object.values(allOrders).filter(o => o.status === 'new').sort((a,b) => b.createdAt-a.createdAt);
+  const mine      = Object.values(allOrders).filter(o => o.driverId === currentUser.id && ['accepted','picked'].includes(o.status));
+  const history   = Object.values(allOrders).filter(o => o.driverId === currentUser.id && ['delivered','cancelled'].includes(o.status));
+
+  document.getElementById('d-available-list').innerHTML = available.length
+    ? available.map(o => driverOrderCard(o)).join('')
+    : emptyState('لا توجد طلبيات متاحة الآن', '🛵');
+
+  document.getElementById('d-mine-list').innerHTML = mine.length
+    ? mine.map(o => driverActiveCard(o)).join('')
+    : emptyState('لا توجد طلبيات في يدك', '✅');
+
+  // Stats
+  const todayDone = todayOrders(history.filter(o=>o.status==='delivered'));
+  document.getElementById('d-stat-today').textContent = todayDone.length;
+  document.getElementById('d-stat-earn').textContent  = todayDone.reduce((s,o)=>s+o.delivery,0);
+
+  document.getElementById('d-history-list').innerHTML = history.length
+    ? history.map(o => orderCard(o, 'driver')).join('')
+    : emptyState('لا يوجد سجل بعد', '📋');
+}
+
+function driverOrderCard(o) {
+  return `
+  <div class="card fu new-order-alert" style="border-color:rgba(34,216,122,.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="color:var(--accent);font-weight:800;font-size:13px">#${shortId(o.id)}</span>
+      <span class="badge badge-new">جديدة 🔔</span>
+    </div>
+    <div style="margin-bottom:10px">
+      <p style="font-weight:800;font-size:15px;margin-bottom:4px">👤 ${o.customer}</p>
+      ${o.phone ? `<p style="color:var(--muted);font-size:12px;margin-bottom:4px">📞 ${o.phone}</p>` : ''}
+      <p style="color:var(--muted);font-size:13px;margin-bottom:4px">📍 ${o.address}</p>
+      <p style="color:var(--text);font-size:13px">📦 ${o.desc}</p>
+      ${o.notes ? `<p style="color:var(--yellow);font-size:12px;margin-top:4px">💬 ${o.notes}</p>` : ''}
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="card-sm" style="flex:1;text-align:center">
+        <p style="color:var(--muted);font-size:10px;margin-bottom:2px">سعر الطلبية</p>
+        <p style="font-weight:900;font-size:16px;color:var(--text)">${o.price} ريال</p>
+      </div>
+      <div class="card-sm" style="flex:1;text-align:center">
+        <p style="color:var(--muted);font-size:10px;margin-bottom:2px">أجرة التوصيل</p>
+        <p style="font-weight:900;font-size:16px;color:var(--green)">${o.delivery} ريال</p>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin-bottom:10px">🏪 ${o.merchantName} · ${timeAgo(o.createdAt)}</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn-red" style="flex:1" onclick="rejectOrder('${o.id}')">رفض</button>
+      <button class="btn-green" style="flex:2" onclick="acceptOrder('${o.id}')">✅ قبول الطلبية</button>
+    </div>
+  </div>`;
+}
+
+function driverActiveCard(o) {
+  const isPicked = o.status === 'picked';
+  return `
+  <div class="card" style="border-color:${isPicked ? 'rgba(168,85,247,.3)' : 'rgba(255,140,66,.3)'}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="color:var(--accent);font-weight:800;font-size:13px">#${shortId(o.id)}</span>
+      <span class="badge ${isPicked ? 'badge-picked' : 'badge-accepted'}">${isPicked ? '🛵 في الطريق' : '✅ مقبولة'}</span>
+    </div>
+    <p style="font-weight:800;font-size:15px;margin-bottom:4px">👤 ${o.customer}</p>
+    ${o.phone ? `<a href="tel:${o.phone}" style="color:var(--accent);font-size:13px;display:block;margin-bottom:4px;text-decoration:none">📞 اتصل: ${o.phone}</a>` : ''}
+    <p style="color:var(--muted);font-size:13px;margin-bottom:8px">📍 ${o.address}</p>
+    <p style="font-size:13px;margin-bottom:12px">📦 ${o.desc}</p>
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div class="card-sm" style="flex:1;text-align:center">
+        <p style="color:var(--muted);font-size:10px;margin-bottom:2px">تحصيل من الزبون</p>
+        <p style="font-weight:900;font-size:18px;color:var(--yellow)">${o.price+o.delivery} ريال</p>
+      </div>
+      <div class="card-sm" style="flex:1;text-align:center">
+        <p style="color:var(--muted);font-size:10px;margin-bottom:2px">أجرتك</p>
+        <p style="font-weight:900;font-size:18px;color:var(--green)">${o.delivery} ريال</p>
+      </div>
+    </div>
+    ${!isPicked
+      ? `<button class="btn-orange" style="width:100%;margin-bottom:8px" onclick="pickupOrder('${o.id}')">🛵 التقطت الطلبية من المطعم</button>`
+      : `<button class="btn-main" style="width:100%;margin-bottom:8px;background:linear-gradient(135deg,var(--green),#0d9950)" onclick="deliverOrder('${o.id}')">🎉 تم التوصيل للزبون</button>`
+    }
+  </div>`;
+}
+
+function acceptOrder(id) {
+  updateOrder(id, { status:'accepted', driverId: currentUser.id, driverName: currentUser.name, acceptedAt: Date.now() });
+  toast('✅ قبلت الطلبية!');
+  dTab('mine');
+}
+
+function rejectOrder(id) {
+  // just ignore, don't change status so other drivers can see it
+  toast('تم التجاهل');
+}
+
+function pickupOrder(id) {
+  updateOrder(id, { status:'picked', pickedAt: Date.now() });
+  toast('🛵 على الطريق!');
+}
+
+function deliverOrder(id) {
+  updateOrder(id, { status:'delivered', deliveredAt: Date.now() });
+  toast('🎉 تم التوصيل! أحسنت');
+}
+
+function toggleDriverStatus() {
+  driverAvailable = !driverAvailable;
+  const btn = document.getElementById('driver-status-btn');
+  btn.textContent = driverAvailable ? '🟢 متاح' : '🔴 غير متاح';
+  btn.style.background = driverAvailable ? 'rgba(34,216,122,.1)' : 'rgba(255,69,96,.1)';
+  btn.style.borderColor = driverAvailable ? 'rgba(34,216,122,.2)' : 'rgba(255,69,96,.2)';
+  btn.style.color = driverAvailable ? 'var(--green)' : 'var(--red)';
+  toast(driverAvailable ? '🟢 أنت متاح الآن' : '🔴 وضع عدم الإزعاج');
+}
+
+function dTab(t) {
+  ['available','mine','history'].forEach(x => {
+    document.getElementById('d-tab-'+x).classList.toggle('on', x===t);
+    document.getElementById('d-panel-'+x).style.display = x===t ? 'block' : 'none';
+    document.getElementById('dn-'+x).classList.toggle('on', x===t);
+  });
+}
+
+// ═══════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════
+function initAdmin() {
+  aTab('all');
+  listenOrders(orders => {
+    renderAdminOrders();
+    updateAdminStats();
+  });
+}
+
+function renderAdminOrders() {
+  let orders = Object.values(allOrders).sort((a,b) => b.createdAt-a.createdAt);
+  if (adminFilter !== 'all') orders = orders.filter(o => o.status === adminFilter);
+
+  document.getElementById('a-all-list').innerHTML = orders.length
+    ? orders.map(o => orderCard(o, 'admin')).join('')
+    : emptyState('لا توجد طلبيات', '📭');
+
+  const live = Object.values(allOrders).filter(o => ['new','accepted','picked'].includes(o.status));
+  document.getElementById('a-live-list').innerHTML = live.length
+    ? live.map(o => orderCard(o, 'admin')).join('')
+    : emptyState('لا توجد طلبيات نشطة', '🟢');
+}
+
+function updateAdminStats() {
+  const orders = Object.values(allOrders);
+  const done = orders.filter(o=>o.status==='delivered');
+  document.getElementById('a-stat-total').textContent   = orders.length;
+  document.getElementById('a-stat-done').textContent    = done.length;
+  document.getElementById('a-stat-revenue').textContent = done.reduce((s,o)=>s+(o.price+o.delivery),0);
+
+  // Driver breakdown
+  const drivers = {};
+  done.forEach(o => {
+    if (!o.driverName) return;
+    if (!drivers[o.driverName]) drivers[o.driverName] = {count:0, earn:0};
+    drivers[o.driverName].count++;
+    drivers[o.driverName].earn += o.delivery;
+  });
+  const dCount = Object.keys(drivers).length;
+  document.getElementById('a-stat-drivers').textContent = dCount;
+
+  document.getElementById('a-stats-breakdown').innerHTML = Object.entries(drivers).map(([name, d]) => `
+    <div class="card fu">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><p style="font-weight:800">🛵 ${name}</p><p style="color:var(--muted);font-size:12px">${d.count} طلبية منجزة</p></div>
+        <p style="color:var(--yellow);font-weight:900;font-size:18px">${d.earn} ريال</p>
+      </div>
+    </div>
+  `).join('') || emptyState('لا يوجد بيانات إحصائية بعد','📊');
+}
+
+function adminCancelOrder(id) {
+  if (confirm('إلغاء هذه الطلبية؟')) {
+    updateOrder(id, { status: 'cancelled', cancelledAt: Date.now() });
+    toast('🗑️ تم إلغاء الطلبية');
+    closeModal();
+  }
+}
+
+function aFilter(el, filter) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active-filter'));
+  el.classList.add('active-filter');
+  adminFilter = filter;
+  renderAdminOrders();
+}
+
+function aTab(t) {
+  ['all','live','drivers','stats'].forEach(x => {
+    document.getElementById('a-tab-'+x).classList.toggle('on', x===t);
+    document.getElementById('a-panel-'+x).style.display = x===t ? 'block' : 'none';
+    document.getElementById('an-'+x).classList.toggle('on', x===t);
+  });
+  if (t === 'drivers') renderDriversList();
+  if (t === 'stats')   updateAdminStats();
+}
+
+function renderDriversList() {
+  const drivers = DEMO_USERS.driver;
+  const merchants = DEMO_USERS.merchant;
+  document.getElementById('a-drivers-list').innerHTML = `
+    <p style="color:var(--muted);font-size:12px;margin-bottom:8px;font-weight:700">السائقون</p>
+    ${drivers.map(d => `
+      <div class="card fu" style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:14px;background:rgba(34,216,122,.1);border:1px solid rgba(34,216,122,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🛵</div>
+        <div style="flex:1">
+          <p style="font-weight:800">${d.name}</p>
+          <p style="color:var(--muted);font-size:12px">رمز: ${d.code}</p>
+        </div>
+        <span style="color:var(--green);font-size:11px;font-weight:700">🟢 نشط</span>
+      </div>
+    `).join('')}
+    <p style="color:var(--muted);font-size:12px;margin:12px 0 8px;font-weight:700">التجار</p>
+    ${merchants.map(m => `
+      <div class="card fu" style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:14px;background:rgba(255,140,66,.1);border:1px solid rgba(255,140,66,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>
+        <div style="flex:1">
+          <p style="font-weight:800">${m.name}</p>
+          <p style="color:var(--muted);font-size:12px">رمز: ${m.code}</p>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function addDriver() {
+  const name = document.getElementById('new-driver-name').value.trim();
+  const code = document.getElementById('new-driver-code').value.trim();
+  if (!name || !code) { toast('⚠️ أكمل البيانات'); return; }
+  DEMO_USERS.driver.push({ code, name, role:'driver', id:'d'+Date.now() });
+  document.getElementById('new-driver-name').value = '';
+  document.getElementById('new-driver-code').value = '';
+  renderDriversList();
+  toast('✅ تم إضافة السائق ' + name);
+}
+
+function addMerchant() {
+  const name = document.getElementById('new-merchant-name').value.trim();
+  const code = document.getElementById('new-merchant-code').value.trim();
+  if (!name || !code) { toast('⚠️ أكمل البيانات'); return; }
+  DEMO_USERS.merchant.push({ code, name, role:'merchant', id:'m'+Date.now() });
+  document.getElementById('new-merchant-name').value = '';
+  document.getElementById('new-merchant-code').value = '';
+  renderDriversList();
+  toast('✅ تم إضافة التاجر ' + name);
+}
+
+// ═══════════════════════════════════════════
+// SHARED ORDER CARD
+// ═══════════════════════════════════════════
+function orderCard(o, viewer) {
+  const statusMap = {
+    new:'badge-new',accepted:'badge-accepted',picked:'badge-picked',
+    delivered:'badge-delivered',cancelled:'badge-cancelled'
+  };
+  const statusLabel = {
+    new:'جديدة 🔔', accepted:'مقبولة ✅', picked:'في الطريق 🛵',
+    delivered:'منجزة 🎉', cancelled:'ملغية ❌'
+  };
+  return `
+  <div class="card fu" onclick="openOrderDetail('${o.id}','${viewer}')">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="color:var(--accent);font-weight:800;font-size:13px">#${shortId(o.id)}</span>
+      <span class="badge ${statusMap[o.status]||'badge-new'}">${statusLabel[o.status]||o.status}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="flex:1">
+        <p style="font-weight:800;font-size:14px;margin-bottom:2px">👤 ${o.customer}</p>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:2px">📍 ${o.address}</p>
+        <p style="color:var(--text);font-size:12px">📦 ${o.desc}</p>
+      </div>
+      <div style="text-align:left;flex-shrink:0;margin-right:10px">
+        <p style="color:var(--yellow);font-weight:900;font-size:16px">${(o.price||0)+(o.delivery||0)} ريال</p>
+        <p style="color:var(--muted);font-size:11px">${timeAgo(o.createdAt)}</p>
+      </div>
+    </div>
+    ${o.driverName ? `<p style="color:var(--green);font-size:11px;margin-top:6px;font-weight:700">🛵 ${o.driverName}</p>` : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// ORDER DETAIL MODAL
+// ═══════════════════════════════════════════
+function openOrderDetail(id, viewer) {
+  const o = allOrders[id];
+  if (!o) return;
+  const statusLabel = { new:'جديدة 🔔', accepted:'مقبولة ✅', picked:'في الطريق 🛵', delivered:'منجزة 🎉', cancelled:'ملغية ❌' };
+  const statusMap   = { new:'badge-new', accepted:'badge-accepted', picked:'badge-picked', delivered:'badge-delivered', cancelled:'badge-cancelled' };
+
+  let actions = '';
+  if (viewer === 'admin' && !['delivered','cancelled'].includes(o.status)) {
+    actions = `<button class="btn-red" style="width:100%;margin-top:12px" onclick="adminCancelOrder('${id}')">🗑️ إلغاء الطلبية</button>`;
+  }
+
+  document.getElementById('modal-content').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:18px;font-weight:900">#${shortId(o.id)}</h3>
+      <span class="badge ${statusMap[o.status]||''}">${statusLabel[o.status]||o.status}</span>
+    </div>
+    <div class="card-sm" style="margin-bottom:10px">
+      ${row('الزبون', o.customer)}
+      ${o.phone ? row('الهاتف', `<a href="tel:${o.phone}" style="color:var(--accent)">${o.phone}</a>`) : ''}
+      ${row('العنوان', o.address)}
+      ${row('الطلبية', o.desc)}
+      ${o.notes ? row('ملاحظات', o.notes) : ''}
+    </div>
+    <div class="card-sm" style="margin-bottom:10px">
+      ${row('سعر الطلبية', o.price+' ريال')}
+      ${row('سعر التوصيل', o.delivery+' ريال')}
+      ${row('الإجمالي', `<strong style="color:var(--yellow)">${(o.price||0)+(o.delivery||0)} ريال</strong>`)}
+    </div>
+    <div class="card-sm" style="margin-bottom:10px">
+      ${row('المطعم', o.merchantName||'—')}
+      ${row('السائق', o.driverName||'<span style="color:var(--muted)">لم يُحدد بعد</span>')}
+      ${row('وقت الطلب', new Date(o.createdAt).toLocaleString('ar'))}
+      ${o.deliveredAt ? row('وقت التوصيل', new Date(o.deliveredAt).toLocaleString('ar')) : ''}
+    </div>
+    ${actions}
+    <button onclick="closeModal()" style="width:100%;margin-top:10px;background:none;border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:14px;font-family:inherit;cursor:pointer;padding:12px">إغلاق</button>
+  `;
+  openModal();
+}
+
+function row(label, value) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+    <span style="color:var(--muted);font-size:12px;flex-shrink:0">${label}</span>
+    <span style="font-size:13px;font-weight:600;text-align:left;max-width:60%">${value}</span>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function openModal()  { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function shortId(id) {
+  return (id||'').toString().slice(-6).toUpperCase();
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff/60000);
+  const h = Math.floor(m/60);
+  if (m < 1) return 'الآن';
+  if (m < 60) return `منذ ${m} دقيقة`;
+  return `منذ ${h} ساعة`;
+}
+
+function todayOrders(orders) {
+  const today = new Date().toDateString();
+  return orders.filter(o => new Date(o.createdAt).toDateString() === today);
+}
+
+function emptyState(msg, icon='📭') {
+  return `<div class="empty"><div class="icon">${icon}</div><p>${msg}</p></div>`;
+}
+
+// Enter key submit
+document.getElementById('login-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
